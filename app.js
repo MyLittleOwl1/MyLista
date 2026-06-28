@@ -175,6 +175,7 @@ async function loadCatalog() {
     }
     catalog.sort((a, b) => a.localeCompare(b, "es"));
     populateQuickAdd();
+    populateCatalogDatalist();
 }
 
 async function saveCatalog() {
@@ -405,6 +406,7 @@ function renderList() {
         nameInput.placeholder = "Escribe un producto...";
         nameInput.value = item.name || "";
         nameInput.setAttribute("autocomplete", "off");
+        nameInput.setAttribute("list", "catalogSuggestions");
         nameInput.className = "item-name-input";
 
         const del = document.createElement("button");
@@ -493,6 +495,25 @@ function populateQuickAdd() {
     });
     quickAddSelect.value = currentVal !== "" && catalog.includes(currentVal) ? currentVal : "";
 }
+
+// ----- AUTOCOMPLETADO DESDE CATÁLOGO -----
+const catalogDatalist = document.getElementById("catalogSuggestions");
+
+function populateCatalogDatalist() {
+    catalogDatalist.innerHTML = "";
+    catalog.forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        catalogDatalist.appendChild(opt);
+    });
+}
+
+// Sincronizar datalist cuando cambie el catálogo
+const _origSaveCatalog = saveCatalog;
+saveCatalog = async function () {
+    await _origSaveCatalog.call(this);
+    populateCatalogDatalist();
+};
 
 quickAddSelect.addEventListener("change", () => {
     const name = quickAddSelect.value;
