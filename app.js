@@ -181,7 +181,7 @@ async function loadList(date) {
     const snap = await docRef.get();
 
     if (snap.exists) {
-        currentItems = snap.data().items || [];
+        currentItems = (snap.data().items || []).map((it) => ({ ...it, checked: it.checked || false }));
     } else {
         currentItems = [];
         await docRef.set({ items: currentItems });
@@ -260,7 +260,7 @@ addItemBtn.addEventListener("click", () => {
         }
         return;
     }
-    currentItems.push({ name: "", quantity: 1 });
+    currentItems.push({ name: "", quantity: 1, checked: false });
     renderList();
     const inputs = itemsContainer.querySelectorAll(".item-name-input");
     const last = inputs[inputs.length - 1];
@@ -363,6 +363,22 @@ function renderList() {
     currentItems.forEach((item, index) => {
         const row = document.createElement("div");
         row.className = "item-row";
+        row.classList.toggle("checked", !!item.checked);
+
+        // Círculo de marcado
+        const checkBtn = document.createElement("button");
+        checkBtn.className = "item-check";
+        checkBtn.textContent = item.checked ? "✓" : "○";
+        checkBtn.setAttribute("aria-label", item.checked ? "Desmarcar" : "Marcar como comprado");
+        checkBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!currentItems[index]) return;
+            currentItems[index].checked = !currentItems[index].checked;
+            row.classList.toggle("checked");
+            checkBtn.textContent = currentItems[index].checked ? "✓" : "○";
+            checkBtn.setAttribute("aria-label", currentItems[index].checked ? "Desmarcar" : "Marcar como comprado");
+            syncList();
+        });
 
         const nameInput = document.createElement("input");
         nameInput.type = "text";
@@ -380,6 +396,12 @@ function renderList() {
 
         nameInput.addEventListener("input", async () => {
             if (!currentItems[index]) return;
+            if (item.checked) {
+                item.checked = false;
+                row.classList.remove("checked");
+                checkBtn.textContent = "○";
+                checkBtn.setAttribute("aria-label", "Marcar como comprado");
+            }
             currentItems[index].name = nameInput.value;
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
@@ -398,7 +420,6 @@ function renderList() {
                     syncList();
                 }, 150);
             } else {
-                // Añadir al catálogo si es nuevo
                 if (!catalog.includes(val)) {
                     catalog.push(val);
                     catalog.sort((a, b) => a.localeCompare(b, "es"));
@@ -408,13 +429,15 @@ function renderList() {
             }
         });
 
-        del.addEventListener("click", () => {
+        del.addEventListener("click", (e) => {
+            e.stopPropagation();
             if (!currentItems[index]) return;
             currentItems.splice(index, 1);
             renderList();
             syncList();
         });
 
+        row.appendChild(checkBtn);
         row.appendChild(nameInput);
         row.appendChild(del);
         itemsContainer.appendChild(row);
@@ -461,7 +484,7 @@ quickAddSelect.addEventListener("change", () => {
         quickAddSelect.value = "";
         return;
     }
-    currentItems.push({ name, quantity: 1 });
+    currentItems.push({ name, quantity: 1, checked: false });
     renderList();
     syncList();
     quickAddSelect.value = "";

@@ -539,9 +539,43 @@ body {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: 8px 10px 8px 12px;
+    padding: 6px 10px 6px 6px;
     transition: all var(--transition);
     animation: itemFadeIn 0.25s ease-out;
+}
+
+/* ----- CHECK CIRCLE ----- */
+.item-check {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+    color: transparent;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition);
+    flex-shrink: 0;
+    touch-action: manipulation;
+}
+
+.item-check:hover {
+    border-color: var(--accent);
+}
+
+.item-check:active {
+    transform: scale(0.9);
+}
+
+.item-row.checked .item-check {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
 }
 
 .item-name-input {
@@ -566,6 +600,21 @@ body {
 
 .item-name-input::placeholder {
     color: var(--text-muted);
+}
+
+/* ----- CHECKED STATE ----- */
+.item-row.checked {
+    background: linear-gradient(135deg, var(--success-light) 0%, rgba(16, 185, 129, 0.25) 100%);
+    border-color: var(--success);
+}
+
+.item-row.checked .item-name-input {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.item-row.checked .item-delete {
+    opacity: 0.4;
 }
 
 .item-delete {
