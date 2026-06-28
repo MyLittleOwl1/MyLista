@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 
 <head>
     <meta charset="UTF-8" />
-    <title>Lista de la compra</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyLista — Lista de la compra</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MyLista" />
 
     <link rel="stylesheet" href="styles.css" />
 
@@ -18,40 +22,89 @@
 </head>
 
 <body>
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toastContainer" class="toast-container" role="status" aria-live="polite"></div>
+
     <header class="app-header">
-        <h1>Lista de la compra</h1>
+        <div class="header-inner">
+            <h1 class="app-title">
+                <span class="app-icon">📋</span>
+                MyLista
+            </h1>
+            <button id="themeToggle" class="theme-toggle" aria-label="Cambiar tema">
+                <span class="icon-sun">☀️</span>
+                <span class="icon-moon">🌙</span>
+            </button>
+        </div>
+        <p class="app-subtitle">Lista de la compra</p>
     </header>
 
     <!-- AUTENTICACIÓN -->
     <section id="authSection" class="auth-section">
-        <h2>Iniciar sesión</h2>
+        <div class="auth-card">
+            <div class="auth-icon">🛒</div>
+            <h2>Bienvenido</h2>
+            <p class="auth-desc">Inicia sesión para gestionar tus listas</p>
 
-        <input type="email" id="emailInput" placeholder="Email" />
-        <input type="password" id="passwordInput" placeholder="Contraseña" />
+            <div class="auth-input-group">
+                <input type="email" id="emailInput" placeholder="Correo electrónico" autocomplete="email" />
+            </div>
+            <div class="auth-input-group">
+                <input type="password" id="passwordInput" placeholder="Contraseña" autocomplete="current-password" />
+            </div>
 
-        <button id="loginBtn">Entrar</button>
-        <button id="registerBtn">Registrarse</button>
+            <button id="loginBtn" class="btn-primary">Entrar</button>
+            <button id="registerBtn" class="btn-secondary">Crear cuenta</button>
+        </div>
     </section>
 
     <!-- APP PRINCIPAL -->
-    <main class="app-main">
-        <section class="controls">
-            <label for="dateInput">Fecha de compra:</label>
-            <input type="date" id="dateInput" />
-            <button id="loadListBtn">Cargar / Crear lista</button>
-            <button id="logoutBtn" class="logout">Cerrar sesión</button>
+    <main class="app-main" id="appMain">
+        <!-- Barra superior de controles -->
+        <section class="controls-bar">
+            <div class="date-picker-group">
+                <label for="dateInput" class="date-label">📅 Fecha</label>
+                <input type="date" id="dateInput" />
+            </div>
+            <div class="controls-actions">
+                <button id="loadListBtn" class="btn-outline">Cargar lista</button>
+                <button id="logoutBtn" class="btn-icon logout" aria-label="Cerrar sesión" title="Cerrar sesión">🚪</button>
+            </div>
         </section>
 
-        <section class="list-section">
-            <h2 id="currentDateTitle">Sin fecha seleccionada</h2>
-            <div id="itemsContainer" class="items-container"></div>
+        <!-- Lista -->
+        <section class="list-section" id="listSection">
+            <div class="list-header">
+                <h2 id="currentDateTitle">Sin fecha seleccionada</h2>
+                <span id="itemCount" class="item-count">0 artículos</span>
+            </div>
 
-            <div class="actions">
-                <button id="addItemBtn">Añadir artículo</button>
-                <button id="saveListBtn" class="primary">Guardar lista</button>
+            <div id="itemsContainer" class="items-container">
+                <!-- Los artículos se renderizan aquí -->
+            </div>
+
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">📝</div>
+                <p class="empty-text">Añade artículos a tu lista</p>
+                <p class="empty-hint">Pulsa el botón + para empezar</p>
+            </div>
+
+            <div class="actions-bar">
+                <button id="addItemBtn" class="btn-fab" aria-label="Añadir artículo">
+                    <span class="fab-icon">+</span>
+                    <span class="fab-label">Añadir</span>
+                </button>
+                <button id="saveListBtn" class="btn-primary">
+                    💾 Guardar lista
+                </button>
             </div>
         </section>
     </main>
+
+    <!-- Indicador de carga -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none">
+        <div class="loading-spinner"></div>
+    </div>
 </body>
 
 </html>
