@@ -220,7 +220,6 @@ function formatDate(dateStr) {
 
 // ----- DOM -----
 const dateInput = document.getElementById("dateInput");
-const loadListBtn = document.getElementById("loadListBtn");
 const addItemBtn = document.getElementById("addItemBtn");
 const saveListBtn = document.getElementById("saveListBtn");
 const itemsContainer = document.getElementById("itemsContainer");
@@ -232,8 +231,17 @@ const itemCount = document.getElementById("itemCount");
 const today = new Date().toISOString().split("T")[0];
 dateInput.value = today;
 
-loadListBtn.addEventListener("click", async () => {
-    if (!dateInput.value) return showToast("Selecciona una fecha", "error");
+// Al cambiar la fecha: limpiar lista actual y cargar la nueva
+dateInput.addEventListener("change", async () => {
+    if (!dateInput.value) return;
+    // Limpiar vista actual
+    currentDate = null;
+    currentItems = [];
+    currentDateTitle.textContent = "Cargando...";
+    itemsContainer.innerHTML = "";
+    updateEmptyState();
+    updateItemCount();
+    // Cargar nueva
     try {
         showLoading(true);
         await loadCatalog();
