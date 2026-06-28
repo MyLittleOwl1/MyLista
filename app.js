@@ -162,7 +162,6 @@ async function loadCatalog() {
         await docRef.set({ list: catalog });
     }
     catalog.sort((a, b) => a.localeCompare(b, "es"));
-    createCatalogDatalist();
 }
 
 async function saveCatalog() {
@@ -266,48 +265,134 @@ saveListBtn.addEventListener("click", async () => {
     }
 });
 
-// ----- DATALIST GLOBAL -----
-let catalogDatalist = null;
+// ----- MODAL DE CATÁLOGO -----
+const catalogModal = document.getElementById("catalogModal");
+const catalogModalTitle = document.getElementById("catalogModalTitle");
+const catalogModalList = document.getElementById("catalogModalList");
+const catalogModalSearch = document.getElementById("catalogModalSearch");
+const catalogModalClose = document.getElementById("catalogModalClose");
 
-function createCatalogDatalist() {
-    if (catalogDatalist) catalogDatalist.remove();
-    catalogDatalist = document.createElement("datalist");
-    catalogDatalist.id = "catalogList";
-    catalog.forEach((name) => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        catalogDatalist.appendChild(opt);
-    });
-    document.body.appendChild(catalogDatalist);
+let catalogModalMode = "picker"; // "picker" | "manager"
+let catalogPickerTarget = -1; // índice del item si mode=picker
+
+function openCatalogPicker(index) {
+    catalogModalMode = "picker";
+    catalogPickerTarget = index;
+    catalogModalTitle.textContent = "Seleccionar producto";
+    catalogModalSearch.value = "";
+    catalogModalSearch.placeholder = "Buscar productos...";
+    renderCatalogModalList("");
+    catalogModal.style.display = "flex";
+    setTimeout(() => catalogModalSearch.focus(), 150);
 }
 
-function refreshCatalogDatalist() {
-    if (!catalogDatalist) return;
-    catalogDatalist.innerHTML = "";
-    catalog.forEach((name) => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        catalogDatalist.appendChild(opt);
+function openCatalogManager() {
+    catalogModalMode = "manager";
+    catalogPickerTarget = -1;
+    catalogModalTitle.textContent = "Gestionar catálogo";
+    catalogModalSearch.value = "";
+    catalogModalSearch.placeholder = "Buscar productos para eliminar...";
+    renderCatalogModalList("");
+    catalogModal.style.display = "flex";
+    setTimeout(() => catalogModalSearch.focus(), 150);
+}
+
+function closeCatalogModal() {
+    catalogModal.style.display = "none";
+    catalogModalSearch.value = "";
+}
+
+function renderCatalogModalList(filter) {
+    catalogModalList.innerHTML = "";
+    const lower = filter.toLowerCase();
+    const filtered = catalog.filter((n) => n.toLowerCase().includes(lower));
+
+    if (filtered.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "modal-empty";
+        empty.textContent = filter ? "Sin resultados" : "El catálogo está vacío";
+        catalogModalList.appendChild(empty);
+        return;
+    }
+
+    filtered.forEach((name) => {
+        const item = document.createElement("div");
+        item.className = "modal-list-item";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "item-name";
+        nameSpan.textContent = name;
+
+        item.appendChild(nameSpan);
+
+        if (catalogModalMode === "manager") {
+            // Botón eliminar en modo gestor
+            const delBtn = document.createElement("button");
+            delBtn.className = "item-delete-btn";
+            delBtn.textContent = "🗑️";
+            delBtn.setAttribute("aria-label", `Eliminar ${name}`);
+            delBtn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                catalog = catalog.filter((n) => n !== name);
+                catalog.sort((a, b) => a.localeCompare(b, "es"));
+                await saveCatalog();
+                renderCatalogModalList(catalogModalSearch.value);
+                showToast(`"${name}" eliminado del catálogo`, "info");
+            });
+            item.appendChild(delBtn);
+            item.addEventListener("click", () => delBtn.click());
+        } else {
+            // Modo selector: al hacer tap se elige el producto
+            item.addEventListener("click", () => {
+                if (catalogPickerTarget >= 0 && catalogPickerTarget < currentItems.length) {
+                    currentItems[catalogPickerTarget].name = name;
+                    closeCatalogModal();
+                    renderList();
+                    syncList();
+                } else {
+                    closeCatalogModal();
+                }
+            });
+        }
+
+        catalogModalList.appendChild(item);
     });
 }
+
+// Eventos del modal
+catalogModalClose.addEventListener("click", closeCatalogModal);
+catalogModal.addEventListener("click", (e) => {
+    if (e.target === catalogModal) closeCatalogModal();
+});
+catalogModalSearch.addEventListener("input", () => {
+    renderCatalogModalList(catalogModalSearch.value);
+});
+
+// Botón de gestionar catálogo
+document.getElementById("catalogMgrBtn").addEventListener("click", openCatalogManager);
 
 // ----- RENDER -----
 function renderList() {
     itemsContainer.innerHTML = "";
-    if (!catalogDatalist) createCatalogDatalist();
 
     currentItems.forEach((item, index) => {
         const row = document.createElement("div");
         row.className = "item-row";
 
-        // Input con autocompletado del catálogo
+        // Input para escribir el nombre del producto
         const nameInput = document.createElement("input");
         nameInput.type = "text";
-        nameInput.placeholder = "Buscar o escribir producto...";
+        nameInput.placeholder = "Escribe un producto...";
         nameInput.value = item.name || "";
-        nameInput.setAttribute("list", "catalogList");
         nameInput.setAttribute("autocomplete", "off");
         nameInput.className = "item-name-input";
+
+        // Botón para abrir el catálogo y elegir
+        const pickerBtn = document.createElement("button");
+        pickerBtn.className = "item-catalog-btn";
+        pickerBtn.textContent = "📋";
+        pickerBtn.setAttribute("aria-label", "Elegir del catálogo");
+        pickerBtn.addEventListener("click", () => openCatalogPicker(index));
 
         // Cantidad
         const qty = document.createElement("input");
@@ -317,7 +402,7 @@ function renderList() {
         qty.className = "item-qty";
         qty.inputMode = "numeric";
 
-        // Botón eliminar
+        // Botón eliminar fila
         const del = document.createElement("button");
         del.className = "item-delete";
         del.textContent = "✕";
@@ -328,7 +413,6 @@ function renderList() {
 
         nameInput.addEventListener("input", async () => {
             currentItems[index].name = nameInput.value;
-
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(async () => {
                 const trimmed = nameInput.value.trim();
@@ -336,16 +420,9 @@ function renderList() {
                     catalog.push(trimmed);
                     catalog.sort((a, b) => a.localeCompare(b, "es"));
                     await saveCatalog();
-                    refreshCatalogDatalist();
                 }
                 syncList();
             }, 400);
-        });
-
-        // Al seleccionar una opción del datalist se dispara "input" ya,
-        // pero forzamos sync inmediato
-        nameInput.addEventListener("change", () => {
-            syncList();
         });
 
         qty.addEventListener("input", () => {
@@ -362,6 +439,7 @@ function renderList() {
         });
 
         row.appendChild(nameInput);
+        row.appendChild(pickerBtn);
         row.appendChild(qty);
         row.appendChild(del);
         itemsContainer.appendChild(row);
