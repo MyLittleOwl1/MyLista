@@ -493,3 +493,8 @@ quickAddSelect.addEventListener("change", () => {
 
 // ----- INICIO -----
 loadCatalog();
+
+// Registrar service worker para PWA
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+}

@@ -1,0 +1,20 @@
+{
+  "name": "MyLista — Lista de la compra",
+  "short_name": "MyLista",
+  "description": "Lista de la compra inteligente con catálogo y modo oscuro",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "categories": ["utilities", "lifestyle"],
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
