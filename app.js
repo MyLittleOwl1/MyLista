@@ -248,6 +248,8 @@ loadListBtn.addEventListener("click", async () => {
 
 addItemBtn.addEventListener("click", () => {
     if (!currentDate) return showToast("Primero carga una lista", "error");
+    // Guardar lo escrito antes de añadir
+    syncList();
     // Si ya hay una fila vacía, la enfocamos en vez de crear otra
     const emptyIndex = currentItems.findIndex((it) => !it.name.trim());
     if (emptyIndex !== -1) {
