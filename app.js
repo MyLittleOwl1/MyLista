@@ -121,10 +121,22 @@ logoutBtn.addEventListener("click", async () => {
 });
 
 // Detectar usuario
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
     if (user) {
         authSection.style.display = "none";
         appMain.style.display = "block";
+        // Cargar automáticamente la lista de hoy
+        if (dateInput.value) {
+            try {
+                showLoading(true);
+                await loadCatalog();
+                await loadList(dateInput.value);
+            } catch (_) {
+                currentDateTitle.textContent = "Selecciona una fecha";
+            } finally {
+                showLoading(false);
+            }
+        }
     } else {
         authSection.style.display = "flex";
         appMain.style.display = "none";
