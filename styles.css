@@ -1,0 +1,138 @@
+/* General */
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #f5f5f7;
+    color: #222;
+}
+
+/* Header */
+.app-header {
+    background: #111827;
+    color: #fff;
+    padding: 1rem 1.5rem;
+}
+
+/* Auth section */
+.auth-section {
+    background: #fff;
+    padding: 1rem;
+    margin: 1rem auto;
+    max-width: 400px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.auth-section input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.auth-section button {
+    padding: 0.5rem;
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.auth-section button:hover {
+    background: #1d4ed8;
+}
+
+/* Main app */
+.app-main {
+    max-width: 900px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.controls input[type="date"] {
+    padding: 0.4rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.controls button {
+    padding: 0.45rem 0.9rem;
+    border-radius: 4px;
+    border: none;
+    background: #e5e7eb;
+    cursor: pointer;
+}
+
+.controls button.logout {
+    background: #dc2626;
+    color: #fff;
+}
+
+.controls button.logout:hover {
+    background: #b91c1c;
+}
+
+/* List section */
+.list-section {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.item-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.item-row select,
+.item-row input {
+    padding: 0.35rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.item-row button {
+    padding: 0.35rem 0.6rem;
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.actions button.primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.actions button.primary:hover {
+    background: #1d4ed8;
+}

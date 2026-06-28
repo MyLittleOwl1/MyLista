@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Lista de la compra</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <script src="firebase-config.js"></script>
+    <script defer src="app.js"></script>
+</head>
+
+<body>
+    <header class="app-header">
+        <h1>Lista de la compra</h1>
+    </header>
+
+    <!-- AUTENTICACIÓN -->
+    <section id="authSection" class="auth-section">
+        <h2>Iniciar sesión</h2>
+
+        <input type="email" id="emailInput" placeholder="Email" />
+        <input type="password" id="passwordInput" placeholder="Contraseña" />
+
+        <button id="loginBtn">Entrar</button>
+        <button id="registerBtn">Registrarse</button>
+    </section>
+
+    <!-- APP PRINCIPAL -->
+    <main class="app-main">
+        <section class="controls">
+            <label for="dateInput">Fecha de compra:</label>
+            <input type="date" id="dateInput" />
+            <button id="loadListBtn">Cargar / Crear lista</button>
+            <button id="logoutBtn" class="logout">Cerrar sesión</button>
+        </section>
+
+        <section class="list-section">
+            <h2 id="currentDateTitle">Sin fecha seleccionada</h2>
+            <div id="itemsContainer" class="items-container"></div>
+
+            <div class="actions">
+                <button id="addItemBtn">Añadir artículo</button>
+                <button id="saveListBtn" class="primary">Guardar lista</button>
+            </div>
+        </section>
+    </main>
+</body>
+
+</html>
