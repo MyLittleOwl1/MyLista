@@ -198,6 +198,20 @@ async function saveList(date) {
     const clean = currentItems.filter((it) => it.name.trim());
     currentItems.length = 0;
     currentItems.push(...clean);
+    // Añadir nombres completos al catálogo
+    let changed = false;
+    clean.forEach((it) => {
+        const n = it.name.trim();
+        if (n && !catalog.includes(n)) {
+            catalog.push(n);
+            changed = true;
+        }
+    });
+    if (changed) {
+        catalog.sort((a, b) => a.localeCompare(b, "es"));
+        await saveCatalog();
+        populateQuickAdd();
+    }
     await db
         .collection("shoppingLists")
         .doc(user.uid)
@@ -382,21 +396,14 @@ function renderList() {
             if (!currentItems[index]) return;
             currentItems[index].name = nameInput.value;
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(async () => {
-                if (!currentItems[index]) return;
-                const trimmed = nameInput.value.trim();
-                if (trimmed && !catalog.includes(trimmed)) {
-                    catalog.push(trimmed);
-                    catalog.sort((a, b) => a.localeCompare(b, "es"));
-                    await saveCatalog();
-                    populateQuickAdd();
-                }
+            debounceTimer = setTimeout(() => {
                 syncList();
             }, 400);
         });
 
         nameInput.addEventListener("blur", () => {
-            if (!nameInput.value.trim()) {
+            const val = nameInput.value.trim();
+            if (!val) {
                 setTimeout(() => {
                     if (nameInput.value.trim()) return;
                     if (!currentItems[index] || currentItems[index].name.trim()) return;
@@ -404,6 +411,14 @@ function renderList() {
                     renderList();
                     syncList();
                 }, 150);
+            } else {
+                // Añadir al catálogo si es nuevo
+                if (!catalog.includes(val)) {
+                    catalog.push(val);
+                    catalog.sort((a, b) => a.localeCompare(b, "es"));
+                    saveCatalog();
+                    populateQuickAdd();
+                }
             }
         });
 
