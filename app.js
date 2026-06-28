@@ -498,3 +498,14 @@ loadCatalog();
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js");
 }
+
+// Capturar evento beforeinstallprompt
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Mostrar notificación al usuario
+    setTimeout(() => {
+        showToast("📲 Puedes instalar esta app en tu móvil", "info");
+    }, 3000);
+});
