@@ -161,21 +161,12 @@ async function loadCatalog() {
         catalog = [];
         await docRef.set({ list: catalog });
     }
+    catalog.sort((a, b) => a.localeCompare(b, "es"));
+    createCatalogDatalist();
 }
 
 async function saveCatalog() {
     await db.collection("catalog").doc("items").set({ list: catalog });
-}
-
-async function ensureItemInCatalog(name) {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-
-    if (!catalog.includes(trimmed)) {
-        catalog.push(trimmed);
-        await saveCatalog();
-        updateAllSelectOptions();
-    }
 }
 
 // ----- LISTA POR USUARIO -----
@@ -253,8 +244,12 @@ loadListBtn.addEventListener("click", async () => {
 
 addItemBtn.addEventListener("click", () => {
     if (!currentDate) return showToast("Primero carga una lista", "error");
-    currentItems.push({ name: catalog[0] || "", quantity: 1 });
+    currentItems.push({ name: "", quantity: 1 });
     renderList();
+    // Auto-focus en el último input añadido
+    const inputs = itemsContainer.querySelectorAll(".item-name-input");
+    const last = inputs[inputs.length - 1];
+    if (last) setTimeout(() => last.focus(), 100);
     syncList();
 });
 
@@ -271,38 +266,48 @@ saveListBtn.addEventListener("click", async () => {
     }
 });
 
+// ----- DATALIST GLOBAL -----
+let catalogDatalist = null;
+
+function createCatalogDatalist() {
+    if (catalogDatalist) catalogDatalist.remove();
+    catalogDatalist = document.createElement("datalist");
+    catalogDatalist.id = "catalogList";
+    catalog.forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        catalogDatalist.appendChild(opt);
+    });
+    document.body.appendChild(catalogDatalist);
+}
+
+function refreshCatalogDatalist() {
+    if (!catalogDatalist) return;
+    catalogDatalist.innerHTML = "";
+    catalog.forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        catalogDatalist.appendChild(opt);
+    });
+}
+
 // ----- RENDER -----
 function renderList() {
     itemsContainer.innerHTML = "";
+    if (!catalogDatalist) createCatalogDatalist();
 
     currentItems.forEach((item, index) => {
         const row = document.createElement("div");
         row.className = "item-row";
 
-        // Grip icon
-        const grip = document.createElement("span");
-        grip.className = "item-grip";
-        grip.textContent = "⠿";
-
-        // Select con catálogo
-        const select = document.createElement("select");
-        const customOption = document.createElement("option");
-        customOption.value = "__custom__";
-        customOption.textContent = "Nuevo artículo...";
-        select.appendChild(customOption);
-
-        catalog.forEach((name) => {
-            const opt = document.createElement("option");
-            opt.value = name;
-            opt.textContent = name;
-            select.appendChild(opt);
-        });
-
-        // Input para artículo nuevo
-        const customInput = document.createElement("input");
-        customInput.type = "text";
-        customInput.placeholder = "Escribe un artículo nuevo...";
-        customInput.style.display = "none";
+        // Input con autocompletado del catálogo
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.placeholder = "Buscar o escribir producto...";
+        nameInput.value = item.name || "";
+        nameInput.setAttribute("list", "catalogList");
+        nameInput.setAttribute("autocomplete", "off");
+        nameInput.className = "item-name-input";
 
         // Cantidad
         const qty = document.createElement("input");
@@ -318,42 +323,29 @@ function renderList() {
         del.textContent = "✕";
         del.setAttribute("aria-label", "Eliminar artículo");
 
-        // Estado inicial
-        if (catalog.includes(item.name)) {
-            select.value = item.name;
-        } else {
-            select.value = "__custom__";
-            if (item.name) {
-                customInput.value = item.name;
-                customInput.style.display = "block";
-            }
-        }
+        // --- EVENTOS ---
+        let debounceTimer;
 
-        // Eventos
-        select.addEventListener("change", async () => {
-            if (select.value === "__custom__") {
-                customInput.style.display = "block";
-                customInput.focus();
-                currentItems[index].name = customInput.value;
-            } else {
-                customInput.style.display = "none";
-                currentItems[index].name = select.value;
+        nameInput.addEventListener("input", async () => {
+            currentItems[index].name = nameInput.value;
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                const trimmed = nameInput.value.trim();
+                if (trimmed && !catalog.includes(trimmed)) {
+                    catalog.push(trimmed);
+                    catalog.sort((a, b) => a.localeCompare(b, "es"));
+                    await saveCatalog();
+                    refreshCatalogDatalist();
+                }
                 syncList();
-            }
+            }, 400);
         });
 
-        customInput.addEventListener("input", async () => {
-            currentItems[index].name = customInput.value;
-            await ensureItemInCatalog(customInput.value);
+        // Al seleccionar una opción del datalist se dispara "input" ya,
+        // pero forzamos sync inmediato
+        nameInput.addEventListener("change", () => {
             syncList();
-        });
-
-        customInput.addEventListener("blur", () => {
-            if (!customInput.value && select.value === "__custom__") {
-                customInput.style.display = "none";
-                select.value = catalog[0] || "__custom__";
-                currentItems[index].name = select.value;
-            }
         });
 
         qty.addEventListener("input", () => {
@@ -369,12 +361,9 @@ function renderList() {
             syncList();
         });
 
-        row.appendChild(grip);
-        row.appendChild(select);
+        row.appendChild(nameInput);
         row.appendChild(qty);
         row.appendChild(del);
-        row.appendChild(customInput);
-
         itemsContainer.appendChild(row);
     });
 
@@ -394,40 +383,5 @@ function updateItemCount() {
     itemCount.textContent = `${count} ${count === 1 ? "artículo" : "artículos"}`;
 }
 
-function updateAllSelectOptions() {
-    const rows = itemsContainer.querySelectorAll(".item-row");
-    rows.forEach((row, index) => {
-        const select = row.querySelector("select");
-        const customInput = row.querySelector('input[type="text"]');
-        const currentValue = currentItems[index]?.name || "";
-
-        select.innerHTML = "";
-
-        const customOption = document.createElement("option");
-        customOption.value = "__custom__";
-        customOption.textContent = "Nuevo artículo...";
-        select.appendChild(customOption);
-
-        catalog.forEach((name) => {
-            const opt = document.createElement("option");
-            opt.value = name;
-            opt.textContent = name;
-            select.appendChild(opt);
-        });
-
-        if (catalog.includes(currentValue)) {
-            select.value = currentValue;
-            if (customInput) customInput.style.display = "none";
-        } else {
-            select.value = "__custom__";
-            if (customInput && currentValue) {
-                customInput.value = currentValue;
-                customInput.style.display = "block";
-            }
-        }
-    });
-}
-
 // ----- INICIO -----
-// Cargar catálogo al inicio
 loadCatalog();
