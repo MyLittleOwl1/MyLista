@@ -193,6 +193,10 @@ async function loadList(date) {
 
 async function saveList(date) {
     const user = auth.currentUser;
+    // Filtrar artículos vacíos antes de guardar
+    const clean = currentItems.filter((it) => it.name.trim());
+    currentItems.length = 0;
+    currentItems.push(...clean);
     await db
         .collection("shoppingLists")
         .doc(user.uid)
@@ -243,9 +247,18 @@ loadListBtn.addEventListener("click", async () => {
 
 addItemBtn.addEventListener("click", () => {
     if (!currentDate) return showToast("Primero carga una lista", "error");
+    // Si ya hay una fila vacía, la enfocamos en vez de crear otra
+    const emptyIndex = currentItems.findIndex((it) => !it.name.trim());
+    if (emptyIndex !== -1) {
+        const inputs = itemsContainer.querySelectorAll(".item-name-input");
+        if (inputs[emptyIndex]) {
+            inputs[emptyIndex].focus();
+            showToast("Completa el artículo vacío primero", "info");
+        }
+        return;
+    }
     currentItems.push({ name: "", quantity: 1 });
     renderList();
-    // Auto-focus en el último input añadido
     const inputs = itemsContainer.querySelectorAll(".item-name-input");
     const last = inputs[inputs.length - 1];
     if (last) setTimeout(() => last.focus(), 100);
@@ -379,7 +392,7 @@ function renderList() {
         const row = document.createElement("div");
         row.className = "item-row";
 
-        // Input para escribir el nombre del producto
+        // Input: ocupa toda la fila
         const nameInput = document.createElement("input");
         nameInput.type = "text";
         nameInput.placeholder = "Escribe un producto...";
@@ -387,14 +400,16 @@ function renderList() {
         nameInput.setAttribute("autocomplete", "off");
         nameInput.className = "item-name-input";
 
-        // Botón para abrir el catálogo y elegir
+        // Barra de acciones debajo del input
+        const actionsRow = document.createElement("div");
+        actionsRow.className = "item-actions";
+
         const pickerBtn = document.createElement("button");
         pickerBtn.className = "item-catalog-btn";
         pickerBtn.textContent = "📋";
         pickerBtn.setAttribute("aria-label", "Elegir del catálogo");
         pickerBtn.addEventListener("click", () => openCatalogPicker(index));
 
-        // Cantidad
         const qty = document.createElement("input");
         qty.type = "number";
         qty.min = "1";
@@ -402,7 +417,6 @@ function renderList() {
         qty.className = "item-qty";
         qty.inputMode = "numeric";
 
-        // Botón eliminar fila
         const del = document.createElement("button");
         del.className = "item-delete";
         del.textContent = "✕";
@@ -425,6 +439,18 @@ function renderList() {
             }, 400);
         });
 
+        nameInput.addEventListener("blur", () => {
+            if (!nameInput.value.trim()) {
+                setTimeout(() => {
+                    if (!nameInput.value.trim() && currentItems[index] && !currentItems[index].name.trim()) {
+                        currentItems.splice(index, 1);
+                        renderList();
+                        syncList();
+                    }
+                }, 150);
+            }
+        });
+
         qty.addEventListener("input", () => {
             const val = parseInt(qty.value);
             currentItems[index].quantity = val > 0 ? val : 1;
@@ -438,10 +464,12 @@ function renderList() {
             syncList();
         });
 
+        actionsRow.appendChild(pickerBtn);
+        actionsRow.appendChild(qty);
+        actionsRow.appendChild(del);
+
         row.appendChild(nameInput);
-        row.appendChild(pickerBtn);
-        row.appendChild(qty);
-        row.appendChild(del);
+        row.appendChild(actionsRow);
         itemsContainer.appendChild(row);
     });
 
