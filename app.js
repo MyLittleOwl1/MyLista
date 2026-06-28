@@ -198,20 +198,6 @@ async function saveList(date) {
     const clean = currentItems.filter((it) => it.name.trim());
     currentItems.length = 0;
     currentItems.push(...clean);
-    // Añadir nombres completos al catálogo
-    let changed = false;
-    clean.forEach((it) => {
-        const n = it.name.trim();
-        if (n && !catalog.includes(n)) {
-            catalog.push(n);
-            changed = true;
-        }
-    });
-    if (changed) {
-        catalog.sort((a, b) => a.localeCompare(b, "es"));
-        await saveCatalog();
-        populateQuickAdd();
-    }
     await db
         .collection("shoppingLists")
         .doc(user.uid)
