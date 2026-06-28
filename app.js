@@ -162,6 +162,7 @@ async function loadCatalog() {
         await docRef.set({ list: catalog });
     }
     catalog.sort((a, b) => a.localeCompare(b, "es"));
+    populateQuickAdd();
 }
 
 async function saveCatalog() {
@@ -285,23 +286,7 @@ const catalogModalList = document.getElementById("catalogModalList");
 const catalogModalSearch = document.getElementById("catalogModalSearch");
 const catalogModalClose = document.getElementById("catalogModalClose");
 
-let catalogModalMode = "picker"; // "picker" | "manager"
-let catalogPickerTarget = -1; // índice del item si mode=picker
-
-function openCatalogPicker(index) {
-    catalogModalMode = "picker";
-    catalogPickerTarget = index;
-    catalogModalTitle.textContent = "Seleccionar producto";
-    catalogModalSearch.value = "";
-    catalogModalSearch.placeholder = "Buscar productos...";
-    renderCatalogModalList("");
-    catalogModal.style.display = "flex";
-    setTimeout(() => catalogModalSearch.focus(), 150);
-}
-
 function openCatalogManager() {
-    catalogModalMode = "manager";
-    catalogPickerTarget = -1;
     catalogModalTitle.textContent = "Gestionar catálogo";
     catalogModalSearch.value = "";
     catalogModalSearch.placeholder = "Buscar productos para eliminar...";
@@ -338,35 +323,21 @@ function renderCatalogModalList(filter) {
 
         item.appendChild(nameSpan);
 
-        if (catalogModalMode === "manager") {
-            // Botón eliminar en modo gestor
-            const delBtn = document.createElement("button");
-            delBtn.className = "item-delete-btn";
-            delBtn.textContent = "🗑️";
-            delBtn.setAttribute("aria-label", `Eliminar ${name}`);
-            delBtn.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                catalog = catalog.filter((n) => n !== name);
-                catalog.sort((a, b) => a.localeCompare(b, "es"));
-                await saveCatalog();
-                renderCatalogModalList(catalogModalSearch.value);
-                showToast(`"${name}" eliminado del catálogo`, "info");
-            });
-            item.appendChild(delBtn);
-            item.addEventListener("click", () => delBtn.click());
-        } else {
-            // Modo selector: al hacer tap se elige el producto
-            item.addEventListener("click", () => {
-                if (catalogPickerTarget >= 0 && catalogPickerTarget < currentItems.length) {
-                    currentItems[catalogPickerTarget].name = name;
-                    closeCatalogModal();
-                    renderList();
-                    syncList();
-                } else {
-                    closeCatalogModal();
-                }
-            });
-        }
+        const delBtn = document.createElement("button");
+        delBtn.className = "item-delete-btn";
+        delBtn.textContent = "🗑️";
+        delBtn.setAttribute("aria-label", `Eliminar ${name}`);
+        delBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            catalog = catalog.filter((n) => n !== name);
+            catalog.sort((a, b) => a.localeCompare(b, "es"));
+            await saveCatalog();
+            populateQuickAdd();
+            renderCatalogModalList(catalogModalSearch.value);
+            showToast(`"${name}" eliminado del catálogo`, "info");
+        });
+        item.appendChild(delBtn);
+        item.addEventListener("click", () => delBtn.click());
 
         catalogModalList.appendChild(item);
     });
@@ -392,7 +363,6 @@ function renderList() {
         const row = document.createElement("div");
         row.className = "item-row";
 
-        // Input: ocupa toda la fila
         const nameInput = document.createElement("input");
         nameInput.type = "text";
         nameInput.placeholder = "Escribe un producto...";
@@ -400,29 +370,11 @@ function renderList() {
         nameInput.setAttribute("autocomplete", "off");
         nameInput.className = "item-name-input";
 
-        // Barra de acciones debajo del input
-        const actionsRow = document.createElement("div");
-        actionsRow.className = "item-actions";
-
-        const pickerBtn = document.createElement("button");
-        pickerBtn.className = "item-catalog-btn";
-        pickerBtn.textContent = "📋";
-        pickerBtn.setAttribute("aria-label", "Elegir del catálogo");
-        pickerBtn.addEventListener("click", () => openCatalogPicker(index));
-
-        const qty = document.createElement("input");
-        qty.type = "number";
-        qty.min = "1";
-        qty.value = item.quantity;
-        qty.className = "item-qty";
-        qty.inputMode = "numeric";
-
         const del = document.createElement("button");
         del.className = "item-delete";
         del.textContent = "✕";
         del.setAttribute("aria-label", "Eliminar artículo");
 
-        // --- EVENTOS ---
         let debounceTimer;
 
         nameInput.addEventListener("input", async () => {
@@ -434,6 +386,7 @@ function renderList() {
                     catalog.push(trimmed);
                     catalog.sort((a, b) => a.localeCompare(b, "es"));
                     await saveCatalog();
+                    populateQuickAdd();
                 }
                 syncList();
             }, 400);
@@ -451,25 +404,14 @@ function renderList() {
             }
         });
 
-        qty.addEventListener("input", () => {
-            const val = parseInt(qty.value);
-            currentItems[index].quantity = val > 0 ? val : 1;
-            if (val <= 0) qty.value = 1;
-            syncList();
-        });
-
         del.addEventListener("click", () => {
             currentItems.splice(index, 1);
             renderList();
             syncList();
         });
 
-        actionsRow.appendChild(pickerBtn);
-        actionsRow.appendChild(qty);
-        actionsRow.appendChild(del);
-
         row.appendChild(nameInput);
-        row.appendChild(actionsRow);
+        row.appendChild(del);
         itemsContainer.appendChild(row);
     });
 
@@ -488,6 +430,38 @@ function updateItemCount() {
     const count = currentItems.length;
     itemCount.textContent = `${count} ${count === 1 ? "artículo" : "artículos"}`;
 }
+
+// ----- QUICK ADD SELECT -----
+const quickAddSelect = document.getElementById("quickAddSelect");
+
+function populateQuickAdd() {
+    const currentVal = quickAddSelect.value;
+    quickAddSelect.innerHTML = '<option value="">➕ Añadir desde catálogo...</option>';
+    catalog.forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        quickAddSelect.appendChild(opt);
+    });
+    quickAddSelect.value = currentVal !== "" && catalog.includes(currentVal) ? currentVal : "";
+}
+
+quickAddSelect.addEventListener("change", () => {
+    const name = quickAddSelect.value;
+    if (!name) return;
+    // Si ya existe un item igual, lo saltamos
+    const exists = currentItems.some((it) => it.name.toLowerCase() === name.toLowerCase());
+    if (exists) {
+        showToast(`"${name}" ya está en la lista`, "info");
+        quickAddSelect.value = "";
+        return;
+    }
+    currentItems.push({ name, quantity: 1 });
+    renderList();
+    syncList();
+    quickAddSelect.value = "";
+    showToast(`"${name}" añadido`, "success");
+});
 
 // ----- INICIO -----
 loadCatalog();
