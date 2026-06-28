@@ -265,7 +265,6 @@ addItemBtn.addEventListener("click", () => {
     const inputs = itemsContainer.querySelectorAll(".item-name-input");
     const last = inputs[inputs.length - 1];
     if (last) setTimeout(() => last.focus(), 100);
-    syncList();
 });
 
 saveListBtn.addEventListener("click", async () => {
@@ -380,9 +379,11 @@ function renderList() {
         let debounceTimer;
 
         nameInput.addEventListener("input", async () => {
+            if (!currentItems[index]) return;
             currentItems[index].name = nameInput.value;
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(async () => {
+                if (!currentItems[index]) return;
                 const trimmed = nameInput.value.trim();
                 if (trimmed && !catalog.includes(trimmed)) {
                     catalog.push(trimmed);
@@ -397,16 +398,17 @@ function renderList() {
         nameInput.addEventListener("blur", () => {
             if (!nameInput.value.trim()) {
                 setTimeout(() => {
-                    if (!nameInput.value.trim() && currentItems[index] && !currentItems[index].name.trim()) {
-                        currentItems.splice(index, 1);
-                        renderList();
-                        syncList();
-                    }
+                    if (nameInput.value.trim()) return;
+                    if (!currentItems[index] || currentItems[index].name.trim()) return;
+                    currentItems.splice(index, 1);
+                    renderList();
+                    syncList();
                 }, 150);
             }
         });
 
         del.addEventListener("click", () => {
+            if (!currentItems[index]) return;
             currentItems.splice(index, 1);
             renderList();
             syncList();
