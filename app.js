@@ -182,14 +182,9 @@ async function saveCatalog() {
     await db.collection("catalog").doc("items").set({ list: catalog });
 }
 
-// ----- LISTA POR USUARIO -----
+// ----- LISTA COMPARTIDA (todos los usuarios ven todas las listas) -----
 async function loadList(date) {
-    const user = auth.currentUser;
-    const docRef = db
-        .collection("shoppingLists")
-        .doc(user.uid)
-        .collection("lists")
-        .doc(date);
+    const docRef = db.collection("shoppingLists").doc(date);
 
     const snap = await docRef.get();
 
@@ -197,7 +192,7 @@ async function loadList(date) {
         currentItems = (snap.data().items || []).map((it) => ({ ...it, checked: it.checked || false }));
     } else {
         currentItems = [];
-        await docRef.set({ items: currentItems });
+        await docRef.set({ items: currentItems, createdBy: auth.currentUser.email });
     }
 
     currentDate = date;
@@ -213,10 +208,12 @@ async function saveList(date) {
     currentItems.push(...clean);
     await db
         .collection("shoppingLists")
-        .doc(user.uid)
-        .collection("lists")
         .doc(date)
-        .set({ items: currentItems });
+        .set({
+            items: currentItems,
+            createdBy: user.email,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 }
 
 async function syncList() {
