@@ -1,4 +1,4 @@
-const CACHE = "mylista-v1";
+const CACHE = "mylista-v2";
 const ASSETS = [
   "index.html",
   "styles.css",
@@ -25,7 +25,15 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
+  // Estrategia Network First: intenta red, si falla usa caché
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
+    fetch(e.request)
+      .then((res) => {
+        // Si la respuesta es válida, actualiza la caché
+        const clone = res.clone();
+        caches.open(CACHE).then((cache) => cache.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });

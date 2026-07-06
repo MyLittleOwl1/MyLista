@@ -2,6 +2,32 @@
 // MyLista — App principal
 // ============================================
 
+// ----- SERVICE WORKER: AUTO-ACTUALIZACIÓN -----
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+        // Detecta cuando hay un nuevo SW esperando para activarse
+        reg.addEventListener("updatefound", () => {
+            const nuevoSW = reg.installing;
+            nuevoSW.addEventListener("statechange", () => {
+                if (nuevoSW.state === "installed" && navigator.serviceWorker.controller) {
+                    // Ya hay una versión nueva, recargar para activarla
+                    showToast("🔄 Nueva versión disponible. Actualizando...", "info");
+                    setTimeout(() => location.reload(), 1500);
+                }
+            });
+        });
+    });
+
+    // Al recargar la página, que el nuevo SW tome control inmediato
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!refreshing) {
+            refreshing = true;
+            location.reload();
+        }
+    });
+}
+
 // ----- TOAST NOTIFICATIONS -----
 function showToast(message, type = "info") {
     const container = document.getElementById("toastContainer");
@@ -125,6 +151,14 @@ auth.onAuthStateChanged(async (user) => {
     if (user) {
         authSection.style.display = "none";
         appMain.style.display = "block";
+
+        // Forzar token fresco para Firestore
+        try {
+            await user.getIdToken(true);
+        } catch (_) {
+            // Si falla el refresh, el token en caché se usa igual
+        }
+
         // Cargar automáticamente la lista de hoy
         if (dateInput.value) {
             try {
@@ -220,6 +254,61 @@ async function syncList() {
     if (currentDate) await saveList(currentDate);
 }
 
+// ----- EXPORTAR LISTA A TXT -----
+function exportListToTxt() {
+    if (!currentDate || currentItems.length === 0) {
+        return showToast("No hay artículos para exportar", "info");
+    }
+
+    const [y, m, d] = currentDate.split("-");
+    const dateObj = new Date(+y, +m - 1, +d);
+    const fechaLegible = dateObj.toLocaleDateString("es-ES", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+    });
+
+    const checkedItems = currentItems.filter((it) => it.checked);
+    const uncheckedItems = currentItems.filter((it) => !it.checked);
+
+    let txt = `📋 MyLista — Lista de la compra\n`;
+    txt += `📅 ${fechaLegible}\n`;
+    txt += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (uncheckedItems.length > 0) {
+        txt += `❌ PENDIENTES (${uncheckedItems.length}):\n`;
+        uncheckedItems.forEach((it, i) => {
+            txt += `   ${i + 1}. ${it.name}\n`;
+        });
+        txt += "\n";
+    }
+
+    if (checkedItems.length > 0) {
+        txt += `✅ COMPRADOS (${checkedItems.length}):\n`;
+        checkedItems.forEach((it, i) => {
+            txt += `   ${i + 1}. ${it.name}\n`;
+        });
+        txt += "\n";
+    }
+
+    txt += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    txt += `Total: ${currentItems.length} artículos\n`;
+    txt += `Generado el ${new Date().toLocaleString("es-ES")}\n`;
+
+    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `MyLista_${currentDate}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast("Lista exportada correctamente", "success");
+}
+
 // Formatear fecha YYYY-MM-DD a algo más legible
 function formatDate(dateStr) {
     const [y, m, d] = dateStr.split("-");
@@ -297,6 +386,9 @@ saveListBtn.addEventListener("click", async () => {
         showLoading(false);
     }
 });
+
+// Botón exportar
+document.getElementById("exportListBtn").addEventListener("click", exportListToTxt);
 
 // ----- MODAL DE CATÁLOGO -----
 const catalogModal = document.getElementById("catalogModal");
