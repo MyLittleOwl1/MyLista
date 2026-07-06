@@ -255,7 +255,7 @@ async function syncList() {
 }
 
 // ----- EXPORTAR LISTA A TXT -----
-function exportListToTxt() {
+async function exportListToTxt() {
     if (!currentDate || currentItems.length === 0) {
         return showToast("No hay artículos para exportar", "info");
     }
@@ -296,17 +296,61 @@ function exportListToTxt() {
     txt += `Total: ${currentItems.length} artículos\n`;
     txt += `Generado el ${new Date().toLocaleString("es-ES")}\n`;
 
-    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `MyLista_${currentDate}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `MyLista_${currentDate}.txt`;
 
-    showToast("Lista exportada correctamente", "success");
+    // 1. En móvil moderno: Web Share API (compartir guardar como archivo)
+    if (navigator.canShare) {
+        try {
+            const file = new File([txt], filename, { type: "text/plain;charset=utf-8" });
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: "MyLista" });
+                return showToast("📄 Lista exportada correctamente", "success");
+            }
+        } catch (_) {
+            // Si el usuario cancela o falla, sigue con la siguiente estrategia
+        }
+    }
+
+    // 2. Web Share API solo texto (fallback parcial)
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: `MyLista - ${currentDate}`, text: txt });
+            return showToast("📄 Lista exportada correctamente", "success");
+        } catch (_) {
+            // Usuario canceló, no mostrar error
+        }
+    }
+
+    // 3. Descarga directa (funciona en Android Chrome, no en iOS)
+    try {
+        const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (_) {
+        // Si download falla, usamos clipboard
+    }
+
+    // 4. Copiar al portapapeles como respaldo universal
+    try {
+        await navigator.clipboard.writeText(txt);
+        showToast("📄 Lista copiada al portapapeles (pégala donde quieras)", "success");
+    } catch (_) {
+        // 5. Último recurso: mostrar en una nueva ventana para copiar manual
+        const win = window.open("", "_blank");
+        if (win) {
+            win.document.write(`<pre>${txt}</pre>`);
+            win.document.title = filename;
+            showToast("📄 Lista abierta en nueva pestaña — cópiala y pégala", "info");
+        } else {
+            showToast("📄 Lista generada — no se pudo descargar", "info");
+        }
+    }
 }
 
 // Formatear fecha YYYY-MM-DD a algo más legible
