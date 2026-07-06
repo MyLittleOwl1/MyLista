@@ -38,10 +38,15 @@
                 <span class="app-icon">📋</span>
                 MyLista
             </h1>
-            <button id="themeToggle" class="theme-toggle" aria-label="Cambiar tema">
-                <span class="icon-sun">☀️</span>
-                <span class="icon-moon">🌙</span>
-            </button>
+            <div class="header-actions">
+                <button id="exportListBtn" class="header-btn" title="Exportar lista a TXT" aria-label="Exportar lista">
+                    📄
+                </button>
+                <button id="themeToggle" class="theme-toggle" aria-label="Cambiar tema">
+                    <span class="icon-sun">☀️</span>
+                    <span class="icon-moon">🌙</span>
+                </button>
+            </div>
         </div>
         <p class="app-subtitle">Lista de la compra</p>
     </header>
@@ -106,9 +111,6 @@
                 <button id="addItemBtn" class="btn-fab" aria-label="Añadir artículo">
                     <span class="fab-icon">+</span>
                     <span class="fab-label">Añadir</span>
-                </button>
-                <button id="exportListBtn" class="btn-outline" title="Exportar lista a TXT">
-                    📄 Exportar
                 </button>
                 <button id="saveListBtn" class="btn-primary">
                     💾 Guardar lista
