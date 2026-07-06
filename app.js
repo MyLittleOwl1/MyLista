@@ -271,30 +271,33 @@ async function exportListToTxt() {
 
     const checkedItems = currentItems.filter((it) => it.checked);
     const uncheckedItems = currentItems.filter((it) => !it.checked);
+    const NL = "\r\n";
 
-    let txt = `📋 MyLista — Lista de la compra\n`;
-    txt += `📅 ${fechaLegible}\n`;
-    txt += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    // BOM (UTF-8) para que Windows y editores reconozcan la codificación
+    let txt = "\uFEFF";
+    txt += `MyLista — Lista de la compra${NL}`;
+    txt += `Fecha: ${fechaLegible}${NL}`;
+    txt += `----------------------------------------------------${NL}${NL}`;
 
     if (uncheckedItems.length > 0) {
-        txt += `❌ PENDIENTES (${uncheckedItems.length}):\n`;
+        txt += `PENDIENTES (${uncheckedItems.length}):${NL}`;
         uncheckedItems.forEach((it, i) => {
-            txt += `   ${i + 1}. ${it.name}\n`;
+            txt += `  ${i + 1}. ${it.name}${NL}`;
         });
-        txt += "\n";
+        txt += NL;
     }
 
     if (checkedItems.length > 0) {
-        txt += `✅ COMPRADOS (${checkedItems.length}):\n`;
+        txt += `COMPRADOS (${checkedItems.length}):${NL}`;
         checkedItems.forEach((it, i) => {
-            txt += `   ${i + 1}. ${it.name}\n`;
+            txt += `  ${i + 1}. ${it.name}${NL}`;
         });
-        txt += "\n";
+        txt += NL;
     }
 
-    txt += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    txt += `Total: ${currentItems.length} artículos\n`;
-    txt += `Generado el ${new Date().toLocaleString("es-ES")}\n`;
+    txt += `----------------------------------------------------${NL}`;
+    txt += `Total: ${currentItems.length} artículos${NL}`;
+    txt += `Generado el ${new Date().toLocaleString("es-ES")}${NL}`;
 
     const filename = `MyLista_${currentDate}.txt`;
 
