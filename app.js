@@ -196,7 +196,7 @@ function getFirebaseErrorMessage(code) {
 let catalog = [];
 let currentDate = null;
 let currentItems = [];
-let catalogAutoAdd = true; // Controla si los nuevos artículos se guardan automáticamente en el catálogo
+let catalogAutoAdd = false; // Controla si los nuevos artículos se guardan automáticamente en el catálogo (desactivado por defecto)
 
 async function loadCatalog() {
     const docRef = db.collection("catalog").doc("items");
@@ -237,15 +237,13 @@ async function loadList(date) {
 
 async function saveList(date) {
     const user = auth.currentUser;
-    // Filtrar artículos vacíos antes de guardar
+    // Filtrar artículos vacíos antes de guardar (sin mutar currentItems)
     const clean = currentItems.filter((it) => it.name.trim());
-    currentItems.length = 0;
-    currentItems.push(...clean);
     await db
         .collection("shoppingLists")
         .doc(date)
         .set({
-            items: currentItems,
+            items: clean,
             createdBy: user.email,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
