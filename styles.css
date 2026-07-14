@@ -461,6 +461,11 @@ body {
     gap: 12px;
     padding: 16px 0;
     flex-wrap: nowrap;
+    position: sticky;
+    top: var(--header-height);
+    z-index: 50;
+    background: var(--bg-primary);
+    transition: background var(--transition);
 }
 
 .date-picker-group {
@@ -553,7 +558,12 @@ body {
 
 /* ----- QUICK ADD SELECT ----- */
 .quick-add {
-    margin-bottom: 12px;
+    position: sticky;
+    top: calc(var(--header-height) + 76px);
+    z-index: 49;
+    padding: 0 0 12px 0;
+    background: var(--bg-primary);
+    transition: background var(--transition);
 }
 
 .quick-add select {
