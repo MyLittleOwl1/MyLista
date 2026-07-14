@@ -571,6 +571,9 @@ function renderList() {
             const val = nameInput.value.trim();
             if (!val) {
                 setTimeout(() => {
+                    // Si el elemento ya no está en el DOM, es porque hubo un re-render
+                    // y los índices ya no son fiables — salir para evitar borrar el artículo equivocado
+                    if (!nameInput.isConnected) return;
                     if (nameInput.value.trim()) return;
                     if (!currentItems[index] || currentItems[index].name.trim()) return;
                     currentItems.splice(index, 1);
