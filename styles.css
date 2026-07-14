@@ -457,15 +457,22 @@ body {
 /* ----- CONTROLS BAR ----- */
 .controls-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    padding: 16px 0;
-    flex-wrap: nowrap;
+    padding: 12px 0 8px 0;
     position: sticky;
     top: var(--header-height);
     z-index: 50;
     background: var(--bg-primary);
     transition: background var(--transition);
+}
+
+.controls-bar .quick-add {
+    width: 100%;
+    position: static;
+    padding: 0;
+    background: none;
 }
 
 .date-picker-group {
@@ -557,15 +564,6 @@ body {
 }
 
 /* ----- QUICK ADD SELECT ----- */
-.quick-add {
-    position: sticky;
-    top: calc(var(--header-height) + 76px);
-    z-index: 49;
-    padding: 0 0 12px 0;
-    background: var(--bg-primary);
-    transition: background var(--transition);
-}
-
 .quick-add select {
     width: 100%;
     padding: 12px 14px;
