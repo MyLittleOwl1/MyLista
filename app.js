@@ -196,6 +196,7 @@ function getFirebaseErrorMessage(code) {
 let catalog = [];
 let currentDate = null;
 let currentItems = [];
+let catalogAutoAdd = true; // Controla si los nuevos artículos se guardan automáticamente en el catálogo
 
 async function loadCatalog() {
     const docRef = db.collection("catalog").doc("items");
@@ -513,6 +514,25 @@ catalogModalSearch.addEventListener("input", () => {
 // Botón de gestionar catálogo
 document.getElementById("catalogMgrBtn").addEventListener("click", openCatalogManager);
 
+// Toggle auto-guardado en catálogo
+const catalogToggleBtn = document.getElementById("catalogToggleBtn");
+catalogToggleBtn.addEventListener("click", () => {
+    catalogAutoAdd = !catalogAutoAdd;
+    catalogToggleBtn.classList.toggle("active", catalogAutoAdd);
+    catalogToggleBtn.title = catalogAutoAdd
+        ? "Auto-guardar en catálogo: activado"
+        : "Auto-guardar en catálogo: desactivado";
+    catalogToggleBtn.setAttribute("aria-label", catalogAutoAdd
+        ? "Auto-guardado en catálogo: activado"
+        : "Auto-guardado en catálogo: desactivado");
+    showToast(
+        catalogAutoAdd
+            ? "📖 Auto-guardado en catálogo activado"
+            : "🚫 Auto-guardado en catálogo desactivado",
+        "info"
+    );
+});
+
 // ----- RENDER -----
 function renderList() {
     itemsContainer.innerHTML = "";
@@ -580,7 +600,7 @@ function renderList() {
                     renderList();
                     syncList();
                 }, 150);
-            } else {
+            } else if (catalogAutoAdd) {
                 if (!catalog.includes(val)) {
                     catalog.push(val);
                     catalog.sort((a, b) => a.localeCompare(b, "es"));

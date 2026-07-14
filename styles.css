@@ -427,6 +427,33 @@ body {
     border-color: var(--danger);
 }
 
+/* ----- CATALOG TOGGLE ----- */
+.catalog-toggle {
+    position: relative;
+    transition: all var(--transition);
+}
+
+.catalog-toggle.active {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.catalog-toggle.active:hover {
+    background: rgba(124, 106, 240, 0.2);
+}
+
+.catalog-toggle:not(.active) {
+    opacity: 0.5;
+    border-color: var(--border);
+}
+
+.catalog-toggle:not(.active):hover {
+    opacity: 0.8;
+    background: var(--danger-light);
+    border-color: var(--danger);
+}
+
 /* ----- CONTROLS BAR ----- */
 .controls-bar {
     display: flex;
